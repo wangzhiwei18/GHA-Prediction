@@ -1,3 +1,5 @@
 # GHA_Prediction
 
-Just run the model.R
+data_cv.RData contains dataset used by models.
+
+Just run the model.R.
