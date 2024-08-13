@@ -1,7 +1,7 @@
 # GHA_Prediction
 
 ## Files
-features_time.csv contains the raw, unprocessed dataset, where the data has not undergone preprocessing steps such as normalization, centering, or type conversion. It includes the values of various features corresponding to build, along with runID and repoID.
+input.csv contains the raw, unprocessed dataset, where the data has not undergone preprocessing steps such as normalization, centering, or type conversion. It includes the values of various features corresponding to build, along with runID and repoID.
 
 The data_time.RData file stores the processed dataset, where the data has undergone preprocessing operations like normalization, centering, and type conversion, making it ready for direct use in model training.
 
