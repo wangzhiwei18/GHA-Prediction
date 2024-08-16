@@ -5,7 +5,7 @@ input.csv contains the raw, unprocessed dataset, where the data has not undergon
 
 The data_time.RData file stores the processed dataset, where the data has undergone preprocessing operations like normalization, centering, and type conversion, making it ready for direct use in model training.
 
-The model.R file contains code for training and testing using 10-fold cross-validation repeated 10 times and time-series-validation, employing algorithms like baseline, logistic regression (LR), k-nearest neighbors (KNN), decision trees (DT), Naive Bayes (NB), random forests (RF), and support vector machines (SVM). It also includes code for conducting ablation studies.
+The model.R file contains code for training and testing using time-series-validation, employing algorithms like baseline, logistic regression (LR), k-nearest neighbors (KNN), decision trees (DT), Naive Bayes (NB), random forests (RF), and support vector machines (SVM). It also includes code for conducting ablation studies.
 
 ## Usage
 To reproduce the results presented in the paper, simply run the model.R file.
