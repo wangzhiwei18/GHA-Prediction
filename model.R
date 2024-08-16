@@ -11,72 +11,6 @@ library(ROSE)
 library(effsize)
 
 load("YourPath/data_time.RData")
-# str(osx)
-# str(osy)
-
-#calculate baseline
-set.seed(123)
-folds <- createMultiFolds(osycv, k=10, times=10)
-# str(fold1)
-# initiate metrics
-accuracy_list <- numeric(length(folds))
-precision_list <- numeric(length(folds))
-recall_list <- numeric(length(folds))
-f1_list <- numeric(length(folds))
-
-databl <- data.frame(osycv)
-str(databl)
-
-# 10 times 10-fold cv
-for (i in 1:length(folds)) {
-  # get index
-  testIndex <- folds[[i]]
-  
-  # divide train & test set
-  testData <- databl[testIndex, ]
-  testData <- data.frame(testData)
-  str(testData)
-  
-  # 50% random prediction
-  random_predictions <- sample(levels(testData$testData), size = nrow(testData), replace = TRUE)
-  
-  # confusion matrix
-  confusionMat <- confusionMatrix(as.factor(random_predictions), testData$testData)
-  
-  # get metrics
-  accuracy <- confusionMat$overall["Accuracy"]
-  precision <- confusionMat$byClass["Precision"]
-  recall <- confusionMat$byClass["Sensitivity"]
-  f1 <- 2 * (precision * recall) / (precision + recall)
-  
-  # 0 division
-  if (is.nan(precision) || is.nan(recall) || is.nan(f1)) {
-    precision <- 0
-    recall <- 0
-    f1 <- 0
-  }
-  
-  # save results
-  accuracy_list[i] <- accuracy
-  precision_list[i] <- precision
-  recall_list[i] <- recall
-  f1_list[i] <- f1
-}
-
-# average metrics
-mean_accuracy <- mean(accuracy_list)
-mean_precision <- mean(precision_list)
-mean_recall <- mean(recall_list)
-mean_f1 <- mean(f1_list)
-
-# print
-cat("Mean Accuracy:", mean_accuracy, "\n")
-cat("Mean Precision:", mean_precision, "\n")
-cat("Mean Recall:", mean_recall, "\n")
-cat("Mean F1 Score:", mean_f1, "\n")
-
-
-
 
 
 model_summary <- function(data,lev=NULL,model=NULL) {
@@ -96,17 +30,13 @@ model_summary <- function(data,lev=NULL,model=NULL) {
 }
 # time-series-validation
 fitControl <- trainControl(
-  method = "timeslice",  # 使用时间序列验证方法
-  initialWindow = 20000,    # 初始窗口大小（可以根据实际情况设置）
-  horizon = 3000,          # 测试窗口大小（可以根据实际情况设置）
-  fixedWindow = TRUE,    # 使用固定大小的窗口
+  method = "timeslice",  
+  initialWindow = 20000,    
+  horizon = 3000,          
+  fixedWindow = TRUE,    
   summaryFunction = model_summary,
   returnResamp = "final"
 )
-# cross-validation
-fitControlcv=trainControl(method="repeatedcv", number=10, repeats=10, summaryFunction = model_summary, returnResamp = "final")
-
-# table(osy)
 
 #parallel
 set.seed(123)
@@ -114,116 +44,7 @@ cl <- makePSOCKcluster(8)
 registerDoParallel(cl)
 
 
-# cross-validation
-#LR
-set.seed(123) 
-LRCV_benchmark=train(osxcv,osycv,method="glm",trControl=fitControlcv)
-print(LRCV_benchmark$resample)
-print(LRCV_benchmark)
-
-
-#KNN
-set.seed(123)
-KNNCV_benchmark=train(osxcv,osycv,method="knn",trControl=fitControlcv)
-print(KNNCV_benchmark$resample)
-print(KNNCV_benchmark)
-
-
-#SVM
-set.seed(123)
-SVMCV_benchmark=train(osxcvc,osycv,method="svmRadial",trControl=fitControlcv)
-print(SVMCV_benchmark$resample)
-print(SVMCV_benchmark)
-
-#RF
-set.seed(123)
-RfCV_benchmark=train(osxcv,osycv,method="rf",trControl=fitControlcv)
-print(RfCV_benchmark$resample)
-print(RfCV_benchmark)
-
-#NB
-set.seed(123)
-NBCV_benchmark=train(osxcv,osycv,method="nb",trControl=fitControlcv)
-print(NBCV_benchmark$resample)
-print(NBCV_benchmark)
-
-#DT
-set.seed(123)
-DTCV_benchmark=train(osxcv,osycv,method="rpart",trControl=fitControlcv)
-print(DTCV_benchmark$resample)
-print(DTCV_benchmark)
-
 ###ablation experiment
-#current_build
-set.seed(123)
-Rf1CV_benchmark=train(only1cv,osycv,method="rf",trControl=fitControlcv)
-print(Rf1CV_benchmark$resample)
-print(Rf1CV_benchmark)
-#historical_build
-set.seed(123)
-Rf2CV_benchmark=train(only2cv,osycv,method="rf",trControl=fitControlcv)
-print(Rf2CV_benchmark$resample)
-print(Rf2CV_benchmark)
-#configuration_file
-set.seed(123)
-Rf3CV_benchmark=train(only3cv,osycv,method="rf",trControl=fitControlcv)
-print(Rf3CV_benchmark$resample)
-print(Rf3CV_benchmark)
-#repository
-set.seed(123)
-Rf4CV_benchmark=train(only4cv,osycv,method="rf",trControl=fitControlcv)
-print(Rf4CV_benchmark$resample)
-print(Rf4CV_benchmark)
-
-
-wilcox.test(RfCV_benchmark$resample$Accuracy.Accuracy,Rf1CV_benchmark$resample$Accuracy.Accuracy,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Accuracy.Accuracy,Rf1CV_benchmark$resample$Accuracy.Accuracy)
-
-wilcox.test(RfCV_benchmark$resample$Precision.Precision,Rf1CV_benchmark$resample$Precision.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Precision.Precision,Rf1CV_benchmark$resample$Precision.Precision)
-
-wilcox.test(RfCV_benchmark$resample$Recall.Sensitivity,Rf1CV_benchmark$resample$Recall.Sensitivity,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Recall.Sensitivity,Rf1CV_benchmark$resample$Recall.Sensitivity)
-
-wilcox.test(RfCV_benchmark$resample$F1.Precision,Rf1CV_benchmark$resample$F1.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$F1.Precision,Rf1CV_benchmark$resample$F1.Precision)
-
-wilcox.test(RfCV_benchmark$resample$Accuracy.Accuracy,Rf2CV_benchmark$resample$Accuracy.Accuracy,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Accuracy.Accuracy,Rf2CV_benchmark$resample$Accuracy.Accuracy)
-
-wilcox.test(RfCV_benchmark$resample$Precision.Precision,Rf2CV_benchmark$resample$Precision.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Precision.Precision,Rf2CV_benchmark$resample$Precision.Precision)
-
-wilcox.test(RfCV_benchmark$resample$Recall.Sensitivity,Rf2CV_benchmark$resample$Recall.Sensitivity,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Recall.Sensitivity,Rf2CV_benchmark$resample$Recall.Sensitivity)
-
-wilcox.test(RfCV_benchmark$resample$F1.Precision,Rf2CV_benchmark$resample$F1.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$F1.Precision,Rf2CV_benchmark$resample$F1.Precision)
-
-wilcox.test(RfCV_benchmark$resample$Accuracy.Accuracy,Rf3CV_benchmark$resample$Accuracy.Accuracy,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Accuracy.Accuracy,Rf3CV_benchmark$resample$Accuracy.Accuracy)
-
-wilcox.test(RfCV_benchmark$resample$Precision.Precision,Rf3CV_benchmark$resample$Precision.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Precision.Precision,Rf3CV_benchmark$resample$Precision.Precision)
-
-wilcox.test(RfCV_benchmark$resample$Recall.Sensitivity,Rf3CV_benchmark$resample$Recall.Sensitivity,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Recall.Sensitivity,Rf3CV_benchmark$resample$Recall.Sensitivity)
-
-wilcox.test(RfCV_benchmark$resample$F1.Precision,Rf3CV_benchmark$resample$F1.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$F1.Precision,Rf3CV_benchmark$resample$F1.Precision)
-
-wilcox.test(RfCV_benchmark$resample$Accuracy.Accuracy,Rf4CV_benchmark$resample$Accuracy.Accuracy,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Accuracy.Accuracy,Rf4CV_benchmark$resample$Accuracy.Accuracy)
-
-wilcox.test(RfCV_benchmark$resample$Precision.Precision,Rf4CV_benchmark$resample$Precision.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Precision.Precision,Rf4CV_benchmark$resample$Precision.Precision)
-
-wilcox.test(RfCV_benchmark$resample$Recall.Sensitivity,Rf4CV_benchmark$resample$Recall.Sensitivity,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$Recall.Sensitivity,Rf4CV_benchmark$resample$Recall.Sensitivity)
-
-wilcox.test(RfCV_benchmark$resample$F1.Precision,Rf4CV_benchmark$resample$F1.Precision,paired = TRUE)
-cliff.delta(RfCV_benchmark$resample$F1.Precision,Rf4CV_benchmark$resample$F1.Precision)
-
 # time-series-validation
 #LR
 set.seed(123) 
@@ -333,3 +154,8 @@ cliff.delta(Rf_benchmark$resample$Recall.Sensitivity,Rf4_benchmark$resample$Reca
 
 wilcox.test(Rf_benchmark$resample$F1.Precision,Rf4_benchmark$resample$F1.Precision,paired = TRUE)
 cliff.delta(Rf_benchmark$resample$F1.Precision,Rf4_benchmark$resample$F1.Precision)
+
+# importance of the features
+importance <- varImp(Rf_benchmark, scale = FALSE)
+print(importance$importance)
+plot(importance, maxrows = Inf)
